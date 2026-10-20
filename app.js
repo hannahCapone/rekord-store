@@ -1,15 +1,13 @@
-// Loads rekordstore_db_tables.sql into an in-browser SQLite database
-// and renders the record list (#/) and each album's page (#/album/<code>).
+// Same two pages as the PHP version (php/index.php and php/followingpage.php),
+// running rekordstore_db_tables.sql in the browser with sql.js.
 
 const app = document.getElementById('app');
-const LABELS = ['#d0311f', '#d9ee50', '#cdc3f1', '#3d2f94', '#f2a541'];
 let db;
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => (
 	{ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
 ));
 
-// Runs a query and returns its rows as plain objects
 const query = (sql, params = []) => {
 	const stmt = db.prepare(sql);
 	stmt.bind(params);
@@ -19,91 +17,40 @@ const query = (sql, params = []) => {
 	return rows;
 };
 
-const disc = (code) => {
-	const color = LABELS[Math.floor(code / 111 - 1) % LABELS.length] || LABELS[0];
-	return `<span class="disc" style="--label:${color}" aria-hidden="true"></span>`;
-};
-
-const formatDate = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('en-US', {
-	month: 'short', day: 'numeric', year: 'numeric',
-});
-
-const sqlBlock = (sql) => `
-	<details class="sql">
-		<summary>Show the SQL</summary>
-		<pre><code>${esc(sql.trim().replace(/^\t+/gm, ''))}</code></pre>
-	</details>`;
-
-const LIST_SQL = `
-	SELECT Album.albumCode, albumTitle, artist, yearOfRelease, COUNT(copyCode) AS copies
-	FROM Album LEFT JOIN Album_Copy ON Album.albumCode = Album_Copy.albumCode
-	GROUP BY Album.albumCode
-	ORDER BY Album.albumCode;`;
-
-const ALBUM_SQL = `
-	SELECT albumTitle, artist, yearOfRelease
-	FROM Album
-	WHERE albumCode = ?;`;
-
-const COPIES_SQL = `
-	SELECT copyCode, purchaseDate, conditions
-	FROM Album_Copy
-	WHERE albumCode = ?
-	ORDER BY purchaseDate;`;
-
+// index.php
 const renderList = () => {
-	const albums = query(LIST_SQL);
-	document.title = 'Rekord Store - Hannah Capone';
+	const albums = query('SELECT * FROM Album ORDER BY albumCode');
+	document.title = 'My Favorite Records';
 	app.innerHTML = `
 		<h1>My Favorite Records</h1>
-		<p class="lede"><i>Click the titles to learn more</i></p>
-		<ol class="records">
+		<p><i>Click the titles to learn more</i></p>
+		<ul class="albums">
 			${albums.map((a) => `
-				<li>
-					<a class="record" href="#/album/${a.albumCode}">
-						${disc(a.albumCode)}
-						<span class="title">${esc(a.albumTitle)}</span>
-						<span class="artist">${esc(a.artist)}</span>
-						<span class="year">${esc(a.yearOfRelease)}</span>
-						<span class="copies">${a.copies} ${a.copies === 1 ? 'copy' : 'copies'}</span>
-					</a>
-				</li>`).join('')}
-		</ol>
-		${sqlBlock(LIST_SQL)}`;
+				<li><a href="#/album/${a.albumCode}">${esc(a.albumTitle)}</a> || ${esc(a.artist)} || ${esc(a.yearOfRelease)}</li>`).join('')}
+		</ul>`;
 };
 
+// followingpage.php
 const renderAlbum = (code) => {
-	const [album] = query(ALBUM_SQL, [code]);
+	const [album] = query('SELECT albumTitle, artist, yearOfRelease FROM Album WHERE albumCode = ?', [code]);
 	if (!album) {
-		app.innerHTML = `<h1>Not found</h1><p class="lede"><a href="#/">&larr; Back to the records</a></p>`;
+		app.innerHTML = '<p><a href="#/">&larr; Back</a></p><h1>Album not found</h1>';
 		return;
 	}
-	const copies = query(COPIES_SQL, [code]);
-	document.title = `${album.albumTitle} - Rekord Store`;
+	const copies = query('SELECT copyCode, purchaseDate, conditions FROM Album_Copy WHERE albumCode = ? ORDER BY copyCode', [code]);
+	document.title = `${album.albumTitle} - My Favorite Records`;
 	app.innerHTML = `
-		<a class="back" href="#/">&larr; All records</a>
-		<div class="album">
-			${disc(code)}
-			<div>
-				<h1>${esc(album.albumTitle)}</h1>
-				<p class="album-meta"><b>${esc(album.artist)}</b> &middot; ${esc(album.yearOfRelease)}</p>
-			</div>
-		</div>
-		<h2>Copies in my collection</h2>
-		<div class="table-wrap">
-			<table class="copies-table">
-				<thead><tr><th>Copy code</th><th>Purchased</th><th>Condition</th></tr></thead>
-				<tbody>
-					${copies.map((c) => `
-						<tr>
-							<td>#${String(c.copyCode).padStart(4, '0')}</td>
-							<td>${esc(formatDate(c.purchaseDate))}</td>
-							<td><span class="condition condition-${esc(c.conditions.toLowerCase())}">${esc(c.conditions)}</span></td>
-						</tr>`).join('')}
-				</tbody>
-			</table>
-		</div>
-		${sqlBlock(ALBUM_SQL + '\n\n' + COPIES_SQL)}`;
+		<p><a href="#/">&larr; Back</a></p>
+		<h1>Album Title: ${esc(album.albumTitle)}</h1>
+		<hr />
+		<p><b>Artist:</b> ${esc(album.artist)}</p>
+		<p><b>Year Of Release:</b> ${esc(album.yearOfRelease)}</p>
+		${copies.map((c) => `
+			<hr />
+			<p><b>Copy Code:</b> ${String(c.copyCode).padStart(4, '0')}</p>
+			<p><b>Purchase Date:</b> ${esc(c.purchaseDate)}</p>
+			<p><b>Condition:</b> ${esc(c.conditions)}</p>`).join('')}
+		<hr />`;
 };
 
 const route = () => {
@@ -122,5 +69,5 @@ Promise.all([
 	window.addEventListener('hashchange', route);
 	route();
 }).catch(() => {
-	app.innerHTML = '<p class="loading">The database didn\'t load. Try refreshing the page.</p>';
+	app.innerHTML = '<p>The database didn\'t load. Try refreshing the page.</p>';
 });

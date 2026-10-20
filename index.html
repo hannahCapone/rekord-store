@@ -3,27 +3,19 @@
 <head>
 	<meta charset="utf-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
-	<title>Rekord Store - Hannah Capone</title>
-	<meta name="description" content="My favorite records, served from a SQL database that runs right in your browser." />
+	<title>My Favorite Records</title>
+	<meta name="description" content="My favorite records, served from a database." />
 	<link rel="icon" href="favicon.png" type="image/png" />
 	<link rel="preconnect" href="https://fonts.googleapis.com" />
 	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-	<link href="https://fonts.googleapis.com/css2?family=Sofia+Sans+Extra+Condensed:wght@700;900&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+	<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
 	<link rel="stylesheet" href="style.css" />
 </head>
 <body>
-	<header class="top">
-		<a class="home" href="#/">Rekord Store</a>
-		<a class="back-site" href="https://hannahcapone.github.io/#projects">hannahcapone.github.io <span>&nearr;</span></a>
-	</header>
+	<main id="app"></main>
 
-	<main id="app" aria-live="polite">
-		<p class="loading">Loading the database&hellip;</p>
-	</main>
-
-	<footer class="foot">
-		<p>Originally built with PHP and MySQL. This version runs the same SQL file in your browser with SQLite (<a href="https://sql.js.org/">sql.js</a>). The original PHP is in <a href="https://github.com/hannahCapone/RekordStore/tree/main/php">/php</a>.</p>
-		<p><a href="https://github.com/hannahCapone/RekordStore">View the code <span>&nearr;</span></a></p>
+	<footer>
+		<p>Originally PHP + MySQL. GitHub Pages can't run PHP, so the same SQL file now runs in your browser with <a href="https://sql.js.org/">sql.js</a>. <a href="https://github.com/hannahCapone/RekordStore">Code</a></p>
 	</footer>
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
